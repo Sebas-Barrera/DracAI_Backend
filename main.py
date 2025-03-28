@@ -66,7 +66,7 @@ verificar_dependencias()
 def conectar_websocket():
     """Crea una conexión al servidor WebSocket"""
     try:
-        ws = websocket.create_connection("ws://192.168.1.70:8080") # Cambiar por la IP del servidor websocket
+        ws = websocket.create_connection("ws://192.168.0.95:8080") # Cambiar por la IP del servidor websocket
         print("Conectado al servidor WebSocket")
         return ws
     except Exception as e:
