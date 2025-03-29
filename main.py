@@ -10,6 +10,7 @@ import warnings
 import websocket
 import json
 from datetime import datetime
+import threading
 
 # =============================================
 # CONFIGURACIÓN INICIAL PARA macOS
@@ -63,15 +64,53 @@ verificar_dependencias()
 # =============================================
 # FUNCIONES AUXILIARES
 # =============================================
+# Modifica la función conectar_websocket()
 def conectar_websocket():
-    """Crea una conexión al servidor WebSocket"""
     try:
-        ws = websocket.create_connection("ws://192.168.0.224:8080") # Cambiar por la IP del servidor websocket
-        print("Conectado al servidor WebSocket")
+        ws = websocket.WebSocketApp(
+            "ws://192.168.1.109:8080",
+            on_open=on_open,
+            on_message=on_message,
+            on_error=on_error,
+            on_close=on_close
+        )
+        
+        # Ejecutar en un hilo separado
+        wst = threading.Thread(target=ws.run_forever)
+        wst.daemon = True
+        wst.start()
+        
         return ws
     except Exception as e:
-        print(f"Error al conectar con el WebSocket: {str(e)}")
+        print(f"Error al inicializar WebSocket: {str(e)}")
         return None
+
+def on_open(ws):
+    print("Conexión WebSocket establecida")
+    # Identificarse como cliente Python inmediatamente
+    ws.send(json.dumps({
+        "tipo": "identificacion",
+        "cliente": "python"
+    }))
+
+def on_message(ws, message):
+    try:
+        data = json.loads(message)
+        # Opcional: procesar mensajes del servidor si es necesario
+    except Exception as e:
+        print(f"Error al procesar mensaje: {str(e)}")
+
+def on_error(ws, error):
+    print(f"Error en WebSocket: {str(error)}")
+
+def on_close(ws, close_status, close_msg):
+    print(f"Conexión cerrada. Status: {close_status}, Mensaje: {close_msg}")
+
+def on_ping(ws, data):
+    print("Ping recibido del servidor")  # El cliente responde automáticamente con pong
+
+def on_pong(ws, data):
+    print("Pong enviado al servidor")  # Confirmación de que el servidor recibió nuestro ping
 
 def enviar_alerta_websocket(ws, confianza, tipo_alerta="arma"):
     """Envía una alerta al WebSocket cuando se detecta una amenaza"""
@@ -385,6 +424,8 @@ def main():
         procesar_cada_n_frames = 2
         contador_salto_frames = 0
         frame_procesado_anterior = None
+        
+        
         
         while True:
             ret, frame = camara.read()
