@@ -68,7 +68,7 @@ verificar_dependencias()
 def conectar_websocket():
     try:
         ws = websocket.WebSocketApp(
-            "ws://192.168.1.109:8080",
+            "ws://192.168.1.72:8080",
             on_open=on_open,
             on_message=on_message,
             on_error=on_error,
@@ -121,7 +121,11 @@ def enviar_alerta_websocket(ws, confianza, tipo_alerta="arma"):
         datos_alerta = {
             "fecha": datetime.now().strftime("%Y-%m-%d"),
             "hora": datetime.now().strftime("%H:%M:%S"),
-            "ubicacion": "Edificio Principal, Calle Norte #123",
+            "ubicacion": {
+                "direccion": "Carretera San Miguel de Allende - Dr. Mora No. 10 Palmita de Landeta, 37749",
+                "latitude": 20.906683,
+                "longitude": -100.707357
+            },
             "confianza": float(confianza),
             "tipo": tipo_alerta
         }
@@ -268,13 +272,15 @@ def detectar_amenazas(frame, modelo, rastreador):
             elif clase == 67:  # Arma
                 armas.append([x1, y1, x2, y2, confianza])
                 emoji = obtener_emoji_confianza(confianza)
-                print(f"{emoji} ¡DETECCIÓN DE ARMA! Confianza: {confianza:.2f}")
+                # Nueva línea con información de ubicación
+                ubicacion_info = " | Ubicación: Carretera San Miguel de Allende - Dr. Mora No. 10 (20.906683, -100.707357)"
+                print(f"{emoji} ¡DETECCIÓN DE ARMA! Confianza: {confianza:.2f}{ubicacion_info}")
                 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 3)
                 cv2.putText(frame, f"¡ARMA! {emoji}: {confianza:.2f}", (x1, y1 - 10), 
-                          cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
                 cv2.putText(frame, "¡ALERTA: ARMA DETECTADA!", (frame.shape[1]//2 - 150, 50), 
-                          cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 255), 2)
         
         rastreador.actualizar(personas)
         frame = rastreador.dibujar(frame)
